@@ -2,10 +2,18 @@
 name: Terraform Validation
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
+
   pull_request:
     paths:
       - "infra/**"
       - ".github/workflows/terraform.yml"
+
   workflow_dispatch:
 
 jobs:
@@ -40,7 +48,15 @@ jobs:
         run: terraform validate
 
       - name: Generate Terraform plan
-        run: terraform plan -refresh=false -input=false -var="db_password=AssessmentOnly123!"
+        run: |
+          set -o pipefail
+          terraform plan -no-color -refresh=false -input=false -var="db_password=AssessmentOnly123!" | tee terraform-plan.txt
+
+      - name: Upload Dev Terraform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-terraform-plan
+          path: infra/envs/dev/terraform-plan.txt
 
   validate-prod:
     name: Validate Production
@@ -73,4 +89,12 @@ jobs:
         run: terraform validate
 
       - name: Generate Terraform plan
-        run: terraform plan -refresh=false -input=false -var="db_password=AssessmentOnly123!"
+        run: |
+          set -o pipefail
+          terraform plan -no-color -refresh=false -input=false -var="db_password=AssessmentOnly123!" | tee terraform-plan.txt
+
+      - name: Upload Production Terraform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-terraform-plan
+          path: infra/envs/prod/terraform-plan.txt
